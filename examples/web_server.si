@@ -1,0 +1,32 @@
+# SimpleInfra Web Server Setup Example
+# Demonstrates variables, servers, and package installation
+
+# Variables
+set app_name "mywebapp"
+set app_port 8080
+set nginx_port 80
+
+# Server definition (change this to your server)
+server web:
+    host "192.168.1.10"
+    user "root"
+    key "~/.ssh/id_rsa"
+
+# Task to setup web server
+task "Setup Web Server" on web:
+    install nginx
+    install python3
+    install python3-pip
+
+    run "systemctl enable nginx"
+    start service nginx
+
+    ensure port 80 is open
+
+    run "echo Web server setup complete!"
+
+# Alternative: Run locally for testing
+task "Setup Locally" on local:
+    run "echo This would install nginx locally"
+    run "echo App name: {app_name}"
+    run "echo App port: {app_port}"

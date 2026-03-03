@@ -1,0 +1,220 @@
+# Complete Illumio-Style Network Segmentation
+# Combines policy templates, dependency mapping, and flow analysis
+# for comprehensive micro-segmentation and zero-trust networking
+
+server web:
+    host "192.168.1.10"
+    user "admin"
+    key "~/.ssh/id_ed25519"
+
+server app:
+    host "192.168.1.20"
+    user "admin"
+    key "~/.ssh/id_ed25519"
+
+server db:
+    host "192.168.1.30"
+    user "admin"
+    key "~/.ssh/id_ed25519"
+
+group all_servers:
+    server web
+    server app
+    server db
+
+# ===== Phase 1: Discovery and Baseline =====
+
+# Discover all services on each tier
+task "Discover Web Services" on web:
+    appdep:
+        action "discover"
+        output "/tmp/web-services.json"
+
+task "Discover App Services" on app:
+    appdep:
+        action "discover"
+        output "/tmp/app-services.json"
+
+task "Discover DB Services" on db:
+    appdep:
+        action "discover"
+        output "/tmp/db-services.json"
+
+# Map dependencies between all services
+task "Map All Dependencies" on web:
+    appdep:
+        action "map_dependencies"
+        duration "600"
+        output "/tmp/full-dependency-map.json"
+
+# Create traffic baselines for each tier
+task "Baseline Web Traffic" on web:
+    flowanalysis:
+        action "baseline"
+        duration "300"
+        name "web-tier-baseline"
+
+task "Baseline App Traffic" on app:
+    flowanalysis:
+        action "baseline"
+        duration "300"
+        name "app-tier-baseline"
+
+task "Baseline DB Traffic" on db:
+    flowanalysis:
+        action "baseline"
+        duration "300"
+        name "db-tier-baseline"
+
+# ===== Phase 2: Policy Template Application =====
+
+# Apply tier-appropriate templates with labels
+task "Apply Web Template" on web:
+    policy:
+        action "apply_template"
+        template "web-tier"
+        labels "role:web,tier:frontend,env:prod,compliance:pci-dss"
+
+task "Apply App Template" on app:
+    policy:
+        action "apply_template"
+        template "app-tier"
+        labels "role:app,tier:backend,env:prod,compliance:pci-dss"
+
+task "Apply DB Template" on db:
+    policy:
+        action "apply_template"
+        template "database-tier"
+        labels "role:database,tier:data,env:prod,compliance:pci-dss,data:cardholder"
+
+# ===== Phase 3: Custom Inter-Tier Policies =====
+
+# Create custom policies based on discovered dependencies
+task "Policy Web to App" on web:
+    policy:
+        action "create_from_labels"
+        source_labels "role:web"
+        destination_labels "role:app"
+        ports "8080,8443"
+        protocol "tcp"
+        description "Allow web tier to app tier API calls"
+
+task "Policy App to DB" on app:
+    policy:
+        action "create_from_labels"
+        source_labels "role:app"
+        destination_labels "role:database"
+        ports "5432"
+        protocol "tcp"
+        description "Allow app tier to database queries"
+
+# ===== Phase 4: Compliance and Hardening =====
+
+# Apply PCI-DSS compliance to database (cardholder data)
+task "PCI Compliance DB" on db:
+    policy:
+        action "apply_compliance"
+        framework "pci-dss"
+        cardholder_zone "true"
+        logging "all"
+
+# Apply HIPAA compliance to app tier (if handling health data)
+task "HIPAA Compliance App" on app:
+    policy:
+        action "apply_compliance"
+        framework "hipaa"
+        phi_zone "false"
+        logging "audit"
+
+# ===== Phase 5: Monitoring and Anomaly Detection =====
+
+# Continuous flow monitoring
+task "Monitor Web Flows" on web:
+    flowanalysis:
+        action "monitor"
+        duration "120"
+        interval "10"
+
+task "Monitor App Flows" on app:
+    flowanalysis:
+        action "monitor"
+        duration "120"
+        interval "10"
+
+# Detect anomalies on critical database tier
+task "Detect DB Anomalies" on db:
+    flowanalysis:
+        action "detect_anomalies"
+        baseline "db-tier-baseline"
+        sensitivity "high"
+
+# Identify top talkers for security review
+task "Top Talkers Analysis" on db:
+    flowanalysis:
+        action "top_talkers"
+        duration "300"
+        top "10"
+
+# ===== Phase 6: Visualization and Reporting =====
+
+# Generate dependency graph
+task "Generate Dependency Graph" on web:
+    appdep:
+        action "generate_graph"
+        format "mermaid"
+        output "/tmp/infrastructure-dependency.mmd"
+
+# Visualize traffic flows
+task "Visualize Traffic Flows" on app:
+    flowanalysis:
+        action "visualize"
+        format "mermaid"
+
+# Get policy recommendations from observed traffic
+task "Policy Recommendations" on app:
+    policy:
+        action "recommend"
+        duration "900"
+        min_frequency "5"
+        output "/tmp/policy-recommendations.json"
+
+# ===== Phase 7: Policy Simulation and Testing =====
+
+# Simulate zero-trust policy before full rollout
+task "Simulate Zero Trust Web" on web:
+    policy:
+        action "simulate"
+        template "zero-trust-app"
+        duration "600"
+        report "/tmp/web-zero-trust-sim.json"
+
+task "Simulate Zero Trust App" on app:
+    policy:
+        action "simulate"
+        template "zero-trust-app"
+        duration "600"
+        report "/tmp/app-zero-trust-sim.json"
+
+# ===== Phase 8: Backup and Documentation =====
+
+# Export all policies for backup
+task "Export Web Policies" on web:
+    policy:
+        action "export_policy"
+        output "/tmp/backup/web-policies.json"
+
+task "Export App Policies" on app:
+    policy:
+        action "export_policy"
+        output "/tmp/backup/app-policies.json"
+
+task "Export DB Policies" on db:
+    policy:
+        action "export_policy"
+        output "/tmp/backup/db-policies.json"
+
+# Analyze flows and generate comprehensive report
+task "Generate Flow Report" on app:
+    flowanalysis action="monitor" duration="300" interval="30"
+    flowanalysis action="top_talkers" duration="300" top="20"
+    flowanalysis action="visualize" format="json"

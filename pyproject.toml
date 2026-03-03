@@ -1,0 +1,71 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "simpleinfra"
+version = "0.1.0"
+description = "Infrastructure as Code, simplified."
+requires-python = ">=3.11"
+license = {text = "MIT"}
+authors = [
+    {name = "SimpleInfra Team"},
+]
+keywords = ["infrastructure", "automation", "devops", "iac", "web3", "blockchain", "ethereum", "ipfs"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: System Administrators",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: System :: Systems Administration",
+]
+dependencies = [
+    "lark>=1.1",
+    "typer>=0.9",
+    "rich>=13.0",
+    "asyncssh>=2.14",
+    "aiofiles>=23.0",
+    "pydantic>=2.5",
+    "python-dotenv>=1.0",
+]
+
+[project.optional-dependencies]
+docker = ["docker>=7.0"]
+aws = ["boto3>=1.34"]
+azure = ["azure-identity>=1.15", "azure-mgmt-compute>=30.0"]
+gcp = ["google-cloud-compute>=1.16"]
+web3 = [
+    "web3>=6.0",
+    "eth-account>=0.9",
+    "ipfshttpclient>=0.8",
+]
+vault = ["cryptography>=41.0", "hvac>=1.2"]
+api = ["fastapi>=0.104", "uvicorn>=0.24"]
+all = ["simpleinfra[docker,aws,azure,gcp,web3,vault,api]"]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.23",
+    "pytest-cov>=4.1",
+    "mypy>=1.8",
+    "ruff>=0.2",
+]
+
+[project.scripts]
+si = "simpleinfra.cli.app:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"

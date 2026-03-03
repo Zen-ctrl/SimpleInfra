@@ -1,0 +1,69 @@
+# Zero-Trust Networking Example
+# Implements zero-trust with default-deny-all
+
+server app:
+    host "192.168.1.10"
+    user "admin"
+    key "~/.ssh/id_ed25519"
+
+server db:
+    host "192.168.1.11"
+    user "admin"
+    key "~/.ssh/id_ed25519"
+
+# Task 1: Enable zero-trust on app server
+task "Enable Zero Trust App" on app:
+    zerotrust:
+        action "enable"
+        zone "app-zerotrust"
+
+# Task 2: Add policy for web traffic
+task "Allow Web Traffic" on app:
+    zerotrust:
+        action "add_policy"
+        service "web-https"
+        source "0.0.0.0/0"
+        destination "self"
+        port "443"
+        protocol "tcp"
+
+# Task 3: Add policy for API traffic
+task "Allow API Traffic" on app:
+    zerotrust:
+        action "add_policy"
+        service "api-access"
+        source "10.0.1.0/24"
+        destination "self"
+        port "8080"
+        protocol "tcp"
+
+# Task 4: Enable zero-trust on database
+task "Enable Zero Trust DB" on db:
+    zerotrust:
+        action "enable"
+        zone "db-zerotrust"
+
+# Task 5: Allow only app server to access database
+task "Allow App to DB" on db:
+    zerotrust:
+        action "add_policy"
+        service "postgresql"
+        source "192.168.1.10"
+        destination "self"
+        port "5432"
+        protocol "tcp"
+
+# Task 6: Verify zero-trust configuration
+task "Verify Zero Trust" on app:
+    zerotrust:
+        action "verify"
+
+task "Verify Zero Trust DB" on db:
+    zerotrust:
+        action "verify"
+
+# Task 7: Audit dropped traffic (check if we need more policies)
+task "Audit Traffic" on app:
+    zerotrust:
+        action "audit"
+        lines "100"

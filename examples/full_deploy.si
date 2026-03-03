@@ -1,0 +1,68 @@
+# SimpleInfra Full Deployment Example
+# Demonstrates variables, conditionals, file operations, and multi-task orchestration
+
+# Variables
+set app_name "myapp"
+set app_version "1.0.0"
+set deploy_path "/opt/myapp"
+
+# Servers
+server web1:
+    host "192.168.1.10"
+    user "deploy"
+    key "~/.ssh/id_rsa"
+
+server web2:
+    host "192.168.1.11"
+    user "deploy"
+    key "~/.ssh/id_rsa"
+
+# Server group
+group webservers:
+    server web1
+    server web2
+
+# Task 1: Build locally (Windows compatible)
+task "Build Application" on local:
+    run "echo Building {app_name} version {app_version}..."
+    run "if not exist dist mkdir dist"
+    run "echo Application built successfully > dist\\app.txt"
+    run "echo Build complete - ready for deployment"
+
+# Task 2: Setup servers
+task "Setup Servers" on webservers:
+    install curl
+    install tar
+
+    create directory "{deploy_path}"
+    create directory "{deploy_path}/releases"
+    create directory "{deploy_path}/logs"
+
+    if os is "ubuntu":
+        install nginx
+        run "ufw allow 80/tcp"
+
+    if os is "centos":
+        install nginx
+        run "firewall-cmd --add-port=80/tcp --permanent"
+
+    run "echo Server {hostname} setup complete"
+
+# Task 3: Deploy application
+task "Deploy Application" on webservers:
+    run "echo Deploying {app_name} to {hostname}..."
+
+    upload "dist/{app_name}-{app_version}.tar.gz" to "/tmp/{app_name}.tar.gz"
+
+    run "tar -xzf /tmp/{app_name}.tar.gz -C {deploy_path}/releases/"
+    run "rm /tmp/{app_name}.tar.gz"
+
+    create file "{deploy_path}/current_version.txt" with content "{app_version}"
+
+    run "echo Deployment to {hostname} complete!"
+
+# Task 4: Verify deployment
+task "Verify Deployment" on webservers:
+    check file "{deploy_path}/current_version.txt" exists
+    run "cat {deploy_path}/current_version.txt"
+    run "echo Verification on {hostname} passed!"

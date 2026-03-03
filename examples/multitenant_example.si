@@ -1,0 +1,56 @@
+# Multi-Tenant Network Isolation Example
+# Shows VLAN-based tenant isolation for SaaS platforms
+
+server host:
+    host "192.168.1.100"
+    user "admin"
+    key "~/.ssh/id_ed25519"
+
+# Task 1: Create Tenant A
+task "Create Tenant A" on host:
+    multitenant:
+        action "create_tenant"
+        tenant_id "tenant-a"
+        vlan_id "100"
+        subnet "10.0.100.1/24"
+        interface "eth0"
+        bandwidth "100mbit"
+
+# Task 2: Create Tenant B
+task "Create Tenant B" on host:
+    multitenant:
+        action "create_tenant"
+        tenant_id "tenant-b"
+        vlan_id "200"
+        subnet "10.0.200.1/24"
+        interface "eth0"
+        bandwidth "150mbit"
+
+# Task 3: Create Tenant C
+task "Create Tenant C" on host:
+    multitenant:
+        action "create_tenant"
+        tenant_id "tenant-c"
+        vlan_id "300"
+        subnet "10.0.300.1/24"
+        interface "eth0"
+        bandwidth "200mbit"
+
+# Task 4: Isolate all tenants from each other
+task "Isolate Tenants" on host:
+    multitenant:
+        action "isolate_tenants"
+        interface "eth0"
+
+# Task 5: List all tenants
+task "List Tenants" on host:
+    multitenant:
+        action "list_tenants"
+
+# Task 6: Update tenant bandwidth
+task "Update Tenant A Bandwidth" on host:
+    multitenant:
+        action "set_bandwidth"
+        tenant_id "tenant-a"
+        vlan_id "100"
+        bandwidth "200mbit"

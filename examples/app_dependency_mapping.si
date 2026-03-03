@@ -1,0 +1,81 @@
+# Application Dependency Mapping Example
+# Discovers services and maps dependencies automatically
+
+server microservices:
+    host "192.168.1.50"
+    user "admin"
+    key "~/.ssh/id_ed25519"
+
+server frontend:
+    host "192.168.1.51"
+    user "admin"
+    key "~/.ssh/id_ed25519"
+
+server backend:
+    host "192.168.1.52"
+    user "admin"
+    key "~/.ssh/id_ed25519"
+
+# Task 1: Discover all running services
+task "Discover Services" on microservices:
+    appdep:
+        action "discover"
+        output "/tmp/discovered-services.json"
+
+# Task 2: Map dependencies between services
+task "Map Dependencies" on microservices:
+    appdep:
+        action "map_dependencies"
+        duration "300"
+        output "/tmp/dependency-map.json"
+
+# Task 3: Create application group for web stack
+task "Create Web App Group" on frontend:
+    appdep:
+        action "create_app_group"
+        group_name "web-stack"
+        services "nginx,nodejs,redis"
+        labels "tier:frontend,stack:web"
+
+# Task 4: Create application group for backend services
+task "Create Backend Group" on backend:
+    appdep:
+        action "create_app_group"
+        group_name "backend-stack"
+        services "java,postgresql,rabbitmq"
+        labels "tier:backend,stack:api"
+
+# Task 5: Analyze traffic flows between services
+task "Analyze Flows" on microservices:
+    appdep:
+        action "analyze_flows"
+        duration "600"
+        min_connections "5"
+        output "/tmp/flow-analysis.json"
+
+# Task 6: Generate dependency graph in JSON format
+task "Generate JSON Graph" on microservices:
+    appdep:
+        action "generate_graph"
+        format "json"
+        output "/tmp/dependency-graph.json"
+
+# Task 7: Generate dependency graph in DOT format (Graphviz)
+task "Generate DOT Graph" on microservices:
+    appdep:
+        action "generate_graph"
+        format "dot"
+        output "/tmp/dependency-graph.dot"
+
+# Task 8: Generate dependency graph in Mermaid format
+task "Generate Mermaid Diagram" on microservices:
+    appdep:
+        action "generate_graph"
+        format "mermaid"
+        output "/tmp/dependency-diagram.mmd"
+
+# Task 9: Full discovery and mapping workflow
+task "Complete Discovery" on backend:
+    appdep action="discover" output="/tmp/services.json"
+    appdep action="map_dependencies" duration="300" output="/tmp/deps.json"
+    appdep action="generate_graph" format="mermaid" output="/tmp/graph.mmd"

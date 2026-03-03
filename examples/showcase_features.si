@@ -1,0 +1,29 @@
+# SimpleInfra Features Showcase - Windows Compatible
+# Demonstrates variables and tasks
+# Run with: python -m simpleinfra.cli.app run examples/showcase_features.si
+
+set project_name "SimpleInfra"
+set version "1.0.0"
+set environment "development"
+set base_dir "simpleinfra-showcase"
+
+task "Variables Demo" on local:
+    run "echo ===================================="
+    run "echo Project: {project_name}"
+    run "echo Version: {version}"
+    run "echo Environment: {environment}"
+    run "echo ===================================="
+
+task "Create Files" on local:
+    run "if not exist {base_dir}\\config mkdir {base_dir}\\config"
+    run "if not exist {base_dir}\\logs mkdir {base_dir}\\logs"
+    run "echo Configuration for {project_name} > {base_dir}\\config\\app.conf"
+    run "echo Created directory structure in {base_dir}"
+
+task "Summary" on local:
+    run "echo ===================================="
+    run "echo SUMMARY"
+    run "echo ===================================="
+    run "dir {base_dir}"
+    run "echo."
+    run "echo All features demonstrated!"

@@ -1,0 +1,38 @@
+# Quick Test - SimpleInfra
+# A simple example to test that everything works
+# Run with: python -m simpleinfra.cli.app run examples/quick_test.si
+
+set message "Hello from SimpleInfra!"
+
+task "Quick Test" on local:
+    # Print message
+    run "echo ================================"
+    run "echo SimpleInfra Quick Test"
+    run "echo ================================"
+    run "echo."
+
+    # Show system info
+    run "echo System Info:"
+    run "whoami"
+    run "cd"
+    run "date /t"
+    run "echo."
+
+    # Create test directory (Windows compatible)
+    run "if not exist simpleinfra-test mkdir simpleinfra-test"
+    run "echo Created: simpleinfra-test"
+
+    # Create test file
+    run "echo Hello from SimpleInfra! > simpleinfra-test\\hello.txt"
+    run "echo Created: simpleinfra-test\\hello.txt"
+    run "echo."
+
+    # Show the file
+    run "echo File contents:"
+    run "type simpleinfra-test\\hello.txt"
+    run "echo."
+
+    # Success message
+    run "echo SUCCESS! SimpleInfra is working correctly."
+    run "echo."
+    run "echo Check the simpleinfra-test folder in your current directory!"

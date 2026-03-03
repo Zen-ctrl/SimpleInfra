@@ -1,0 +1,11 @@
+# SimpleInfra Hello World Example - Windows Compatible
+# This is the simplest possible .si file
+
+task "Hello World" on local:
+    run "echo Hello from SimpleInfra!"
+    run "echo."
+    run "echo Current directory:"
+    run "cd"
+    run "echo."
+    run "echo Date:"
+    run "date /t"

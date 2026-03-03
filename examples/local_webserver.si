@@ -1,0 +1,28 @@
+# Local Web Server Example - Windows Compatible
+# Run with: python -m simpleinfra.cli.app run examples/local_webserver.si
+# Now runs BOTH tasks automatically!
+
+set web_dir "simpleinfra-web"
+
+task "Setup Website" on local:
+    run "if not exist {web_dir} mkdir {web_dir}"
+    run "echo ^<html^>^<head^>^<title^>SimpleInfra^</title^>^</head^>^<body^>^<h1^>SimpleInfra Demo^</h1^>^<p^>Success! This page was created by SimpleInfra.^</p^>^</body^>^</html^> > {web_dir}\\index.html"
+    run "echo."
+    run "echo Website files created in {web_dir}"
+
+task "Start Server" on local:
+    run "echo."
+    run "echo ================================"
+    run "echo Starting web server on port 8080"
+    run "echo ================================"
+    run "echo."
+    run "cd {web_dir} && python -m http.server 8080 &"
+    run "echo."
+    run "echo Web server started!"
+    run "echo."
+    run "echo ===================================="
+    run "echo Open your browser to:"
+    run "echo http://localhost:8080"
+    run "echo ===================================="
+    run "echo."
+    run "echo To stop the server: taskkill //F //IM python.exe"

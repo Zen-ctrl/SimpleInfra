@@ -1,0 +1,89 @@
+# Server Hardening Example
+# Deploy a web server with comprehensive security hardening
+
+set app_name "secure-web-app"
+set app_port 443
+
+server web:
+    host "192.168.1.10"
+    user "deploy"
+    key "~/.ssh/id_ed25519"
+
+# Initial Security Baseline
+task "Security Baseline" on web:
+    # Update system
+    run "apt-get update && apt-get upgrade -y"
+
+    # Install security tools
+    install ufw, fail2ban, aide
+
+    # Configure firewall
+    ensure port 22 is open
+    ensure port 80 is open
+    ensure port 443 is open
+    run "ufw --force enable"
+
+    # Harden SSH
+    copy "configs/sshd_config" to "/etc/ssh/sshd_config"
+    restart service ssh
+
+    # Setup intrusion detection
+    run "aide --init"
+    run "mv /var/lib/aide/aide.db.new /var/lib/aide/aide.db"
+
+# Deploy Application with Security
+task "Deploy Secure App" on web:
+    # Install dependencies
+    install nginx, certbot, python3-certbot-nginx
+
+    # Configure nginx with security headers
+    copy "configs/nginx-secure.conf" to "/etc/nginx/sites-available/{app_name}"
+    run "ln -sf /etc/nginx/sites-available/{app_name} /etc/nginx/sites-enabled/"
+
+    # Get SSL certificate
+    run "certbot --nginx -d myapp.example.com --non-interactive --agree-tos -m admin@example.com"
+
+    # Start nginx
+    start service nginx
+    ensure service nginx is running
+
+# Run Security Scans
+task "Verify Security" on web:
+    # Check for vulnerabilities
+    security scan:
+        type "vulnerability"
+        target "filesystem"
+
+    # Verify only required ports are open
+    security scan:
+        type "ports"
+
+    # Check SSL configuration
+    security scan:
+        type "ssl"
+        domain "myapp.example.com"
+
+    # Run CIS benchmark
+    security scan:
+        type "cis"
+
+    # Scan dependencies
+    security scan:
+        type "dependencies"
+        path "/var/www/app"
+
+# Monitoring and Ongoing Security
+task "Setup Security Monitoring" on web:
+    # Install monitoring tools
+    install logwatch, unattended-upgrades
+
+    # Configure intrusion detection
+    run "aide --init"
+    run "mv /var/lib/aide/aide.db.new /var/lib/aide/aide.db"
+
+    # Setup automated security scans (daily)
+    copy "scripts/daily-security-scan.sh" to "/etc/cron.daily/security-scan"
+    run "chmod +x /etc/cron.daily/security-scan"
+
+    # Enable automatic security updates
+    run "dpkg-reconfigure -plow unattended-upgrades"

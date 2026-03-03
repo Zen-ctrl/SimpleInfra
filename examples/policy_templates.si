@@ -1,0 +1,85 @@
+# Policy Template Example
+# Demonstrates Illumio-like policy templates and label-based segmentation
+
+server web1:
+    host "192.168.1.10"
+    user "admin"
+    key "~/.ssh/id_ed25519"
+
+server app1:
+    host "192.168.1.20"
+    user "admin"
+    key "~/.ssh/id_ed25519"
+
+server db1:
+    host "192.168.1.30"
+    user "admin"
+    key "~/.ssh/id_ed25519"
+
+# Task 1: Apply web-tier template to web server
+task "Setup Web Tier" on web1:
+    policy:
+        action "apply_template"
+        template "web-tier"
+        labels "role:web,tier:frontend,env:prod"
+
+# Task 2: Apply app-tier template to app server
+task "Setup App Tier" on app1:
+    policy:
+        action "apply_template"
+        template "app-tier"
+        labels "role:app,tier:backend,env:prod"
+
+# Task 3: Apply database template with encryption
+task "Setup Database Tier" on db1:
+    policy:
+        action "apply_template"
+        template "database-tier"
+        labels "role:database,tier:data,env:prod,data:sensitive"
+
+# Task 4: Create custom policy from labels
+task "Custom Policy" on app1:
+    policy:
+        action "create_from_labels"
+        source_labels "role:web"
+        destination_labels "role:app"
+        ports "8080,8443"
+        protocol "tcp"
+        description "Allow web to app communication"
+
+# Task 5: Simulate policy before applying (test mode)
+task "Test Policy" on web1:
+    policy:
+        action "simulate"
+        template "zero-trust-app"
+        duration "300"
+        report "/tmp/policy-simulation.json"
+
+# Task 6: Get policy recommendations from traffic
+task "Recommend Policies" on app1:
+    policy:
+        action "recommend"
+        duration "600"
+        min_frequency "10"
+        output "/tmp/policy-recommendations.json"
+
+# Task 7: Apply PCI-DSS compliance template
+task "PCI Compliance" on db1:
+    policy:
+        action "apply_compliance"
+        framework "pci-dss"
+        cardholder_zone "true"
+        logging "all"
+
+# Task 8: Export policies for backup
+task "Export Policies" on web1:
+    policy:
+        action "export_policy"
+        output "/tmp/web1-policies.json"
+
+# Task 9: Import policies from file
+task "Import Policies" on app1:
+    policy:
+        action "import_policy"
+        policy_file "/tmp/app1-policies.json"
+        merge "true"

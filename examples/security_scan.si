@@ -1,0 +1,66 @@
+# Security Scanning Example for SimpleInfra
+# Demonstrates vulnerability scanning, port scanning, SSL checks, and CIS benchmarks
+
+server prod:
+    host "192.168.1.100"
+    user "deploy"
+    key "~/.ssh/id_ed25519"
+
+# Comprehensive Security Audit Task
+task "Security Audit" on prod:
+    # Vulnerability scanning with Trivy
+    security scan:
+        type "vulnerability"
+        target "filesystem"
+
+    # Port scanning
+    security scan:
+        type "ports"
+
+    # Dependency scanning
+    security scan:
+        type "dependencies"
+        path "/opt/myapp"
+        language "auto"
+
+    # CIS Benchmark compliance check
+    security scan:
+        type "cis"
+
+# SSL/TLS Security Check
+task "Check SSL" on prod:
+    security scan:
+        type "ssl"
+        domain "example.com"
+
+# Docker Container Security Scan
+task "Scan Docker Containers" on prod:
+    # Scan all running containers
+    security scan:
+        type "docker"
+
+    # Or scan specific image
+    security scan:
+        type "docker"
+        image "nginx:latest"
+
+# Quick Vulnerability Scan (Local)
+task "Quick Vuln Scan" on local:
+    security scan:
+        type "vulnerability"
+        target "docker"
+        image "myapp:latest"
+
+# Complete Security Hardening Check
+task "Full Security Check" on prod:
+    run "echo 'Starting comprehensive security audit...'"
+
+    # Run all security scans
+    security scan type="vulnerability"
+    security scan type="ports"
+    security scan type="ssl" domain="myapp.example.com"
+    security scan type="dependencies" path="/var/www/app"
+    security scan type="cis"
+    security scan type="docker"
+
+    run "echo 'Security audit complete!'"

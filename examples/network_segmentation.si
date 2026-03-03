@@ -1,0 +1,142 @@
+# Network Segmentation Example for SimpleInfra
+# Demonstrates network isolation, VLANs, micro-segmentation, and agent deployment
+
+# Define network zones
+server dmz:
+    host "192.168.1.10"
+    user "admin"
+    key "~/.ssh/id_ed25519"
+
+server internal:
+    host "192.168.2.10"
+    user "admin"
+    key "~/.ssh/id_ed25519"
+
+server database:
+    host "192.168.3.10"
+    user "admin"
+    key "~/.ssh/id_ed25519"
+
+# Task 1: Create DMZ Zone (Isolated Network)
+task "Setup DMZ Zone" on dmz:
+    # Isolate DMZ with firewall rules
+    network:
+        action "isolate"
+        zone "dmz"
+        allowed_ips ["192.168.1.0/24"]
+        allowed_ports [80, 443, 22]
+        default_policy "deny"
+
+# Task 2: Create VLANs for Network Segmentation
+task "Create VLANs" on internal:
+    # Create VLAN for web tier
+    network:
+        action "vlan"
+        vlan_id 10
+        interface "eth0"
+        ip_address "10.0.10.1"
+        operation "create"
+
+    # Create VLAN for app tier
+    network:
+        action "vlan"
+        vlan_id 20
+        interface "eth0"
+        ip_address "10.0.20.1"
+        operation "create"
+
+# Task 3: Network Discovery
+task "Discover Network" on internal:
+    network:
+        action "discover"
+        subnet "192.168.0.0/16"
+        scan_type "ping"
+
+# Task 4: Create Firewall Zones
+task "Create Security Zones" on internal:
+    # Create DMZ zone
+    network:
+        action "zone"
+        zone "dmz"
+        interfaces ["eth0"]
+        services ["http", "https"]
+        ports ["22/tcp"]
+
+    # Create internal zone
+    network:
+        action "zone"
+        zone "internal"
+        interfaces ["eth1"]
+        sources ["192.168.0.0/16"]
+        services ["ssh"]
+
+# Task 5: Micro-Segmentation Between Services
+task "Microsegment Services" on internal:
+    # Allow only specific traffic between web and app servers
+    network:
+        action "microsegment"
+        from ["10.0.10.0/24"]
+        to ["10.0.20.0/24"]
+        ports [8080, 8443]
+        protocol "tcp"
+
+# Task 6: Deploy Network Monitoring Agents
+task "Deploy Monitoring Agents" on dmz:
+    # Deploy agent in daemon mode
+    agent:
+        action "deploy"
+        zone "dmz"
+        interval 60
+        mode "daemon"
+        actions ["monitor_connections", "check_firewall"]
+
+task "Deploy Agents on Internal" on internal:
+    agent:
+        action "deploy"
+        zone "internal"
+        interval 30
+        mode "daemon"
+        actions ["monitor_connections", "check_firewall"]
+
+# Task 7: Check Agent Status
+task "Check Agents" on dmz:
+    agent:
+        action "status"
+
+# Task 8: Configure Traffic Control (QoS)
+task "Apply Traffic Control" on dmz:
+    # Limit bandwidth on external interface
+    network:
+        action "traffic_control"
+        interface "eth0"
+        tc_action "limit"
+        bandwidth "100mbit"
+
+# Task 9: Complete Network Segmentation Setup
+task "Full Segmentation Setup" on internal:
+    run "echo 'Starting network segmentation...'"
+
+    # Create VLANs
+    network action="vlan" vlan_id="100" interface="eth0" operation="create"
+    network action="vlan" vlan_id="200" interface="eth0" operation="create"
+
+    # Isolate each VLAN
+    network:
+        action "isolate"
+        zone "vlan100"
+        allowed_ips ["10.0.100.0/24"]
+        allowed_ports ["22", "80"]
+
+    # Deploy monitoring agent
+    agent:
+        action "deploy"
+        zone "vlan100"
+        interval "30"
+        mode "daemon"
+
+    run "echo 'Network segmentation complete!'"
+
+# Task 10: Remove Agents (Cleanup)
+task "Remove Agents" on dmz:
+    agent:
+        action "remove"

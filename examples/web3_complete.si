@@ -1,0 +1,221 @@
+# SimpleInfra Web3 Complete Example
+# Deploy a full Web3 infrastructure stack in minutes!
+
+# Secrets (use vault in production)
+secret eth_private_key from env "ETH_PRIVATE_KEY"
+secret infura_key from env "INFURA_API_KEY"
+secret etherscan_key from env "ETHERSCAN_API_KEY"
+
+# Variables
+set network "mainnet"
+set rpc_url "https://mainnet.infura.io/v3/{infura_key}"
+set contract_name "MyNFT"
+
+# Servers
+server eth_node:
+    host "10.0.1.10"
+    user "ubuntu"
+    key "~/.ssh/web3-key"
+
+server ipfs_node:
+    host "10.0.1.11"
+    user "ubuntu"
+    key "~/.ssh/web3-key"
+
+server dapp_backend:
+    host "10.0.1.12"
+    user "ubuntu"
+    key "~/.ssh/web3-key"
+
+# ============================================
+# TASK 1: Deploy Full Ethereum Node
+# ============================================
+task "Deploy Ethereum Node" on eth_node:
+    # Install and run Geth full node
+    ethereum install client="geth"
+
+    ethereum run:
+        client: "geth"
+        type: "full"
+        network: "{network}"
+        data_dir: "/mnt/nvme/ethereum"
+
+    # Wait for sync to start
+    wait for 30 seconds
+
+    # Check sync status
+    ethereum sync_status client="geth"
+
+    # Open RPC ports (firewall)
+    ensure port 8545 is open
+    ensure port 8546 is open
+
+    # Setup monitoring
+    install prometheus-node-exporter
+    start service prometheus-node-exporter
+
+    run "echo 'Ethereum node is syncing...'"
+
+
+# ============================================
+# TASK 2: Deploy IPFS Node
+# ============================================
+task "Deploy IPFS Storage" on ipfs_node:
+    # Install and configure IPFS
+    ipfs install
+    ipfs init profile="server"
+    ipfs run
+
+    # Enable garbage collection
+    run "ipfs config --json Datastore.GCPeriod '\"1h\"'"
+
+    # Open IPFS ports
+    ensure port 4001 is open
+    ensure port 5001 is open
+    ensure port 8080 is open
+
+    # Pin important content
+    ipfs pin cid="QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG"
+
+    run "echo 'IPFS node ready!'"
+
+
+# ============================================
+# TASK 3: Deploy Smart Contracts
+# ============================================
+task "Deploy Smart Contracts" on local:
+    # Install Foundry
+    contract install framework="foundry"
+
+    # Compile contracts
+    contract compile:
+        path: "./contracts"
+        framework: "foundry"
+
+    # Deploy NFT contract
+    contract deploy:
+        contract: "src/MyNFT.sol:MyNFT"
+        rpc_url: "{rpc_url}"
+        private_key: secret eth_private_key
+        args: "'My NFT Collection' 'MNFT' 'ipfs://QmYwAPJ...'"
+
+    # Verify on Etherscan
+    contract verify:
+        address: "0x..."
+        contract: "MyNFT"
+        etherscan_key: secret etherscan_key
+
+    run "echo 'Smart contracts deployed!'"
+
+
+# ============================================
+# TASK 4: Deploy Complete dApp Backend
+# ============================================
+task "Deploy dApp Stack" on dapp_backend:
+    # Use the pre-configured Web3 stack
+    web3_stack deploy "dapp_backend"
+
+    # Deploy your application code
+    git clone "https://github.com/me/dapp-backend.git" to "/opt/dapp"
+
+    # Install dependencies
+    run "cd /opt/dapp && npm install"
+
+    # Template config with secrets
+    template "config/production.env.tmpl" to "/opt/dapp/.env"
+
+    # Start the app
+    docker run:
+        name: "dapp-api"
+        image: "node:18"
+        ports:
+            3000: 3000
+        volumes:
+            "/opt/dapp": "/app"
+        env:
+            NODE_ENV: "production"
+            ETH_RPC_URL: "{rpc_url}"
+            IPFS_GATEWAY: "http://ipfs_node:8080"
+
+    # Health check
+    wait for url "http://localhost:3000/health"
+    check url "http://localhost:3000/health" returns 200
+
+    run "echo 'dApp backend is live!'"
+
+
+# ============================================
+# TASK 5: Deploy NFT Metadata to IPFS
+# ============================================
+task "Upload NFT Metadata" on ipfs_node:
+    # Upload metadata folder
+    run "ipfs add -r /opt/nft-metadata"
+
+    # Pin the folder
+    ipfs pin cid="QmMetadataFolder..."
+
+    # Publish to IPNS for easy updates
+    ipfs publish cid="QmMetadataFolder..."
+
+    run "echo 'NFT metadata uploaded to IPFS!'"
+
+
+# ============================================
+# TASK 6: Setup Monitoring Dashboard
+# ============================================
+task "Setup Monitoring" on eth_node:
+    # Install Prometheus
+    install prometheus
+
+    # Configure to scrape Geth metrics
+    template "prometheus.yml" to "/etc/prometheus/prometheus.yml"
+
+    start service prometheus
+    ensure port 9090 is open
+
+    # Install Grafana
+    install grafana
+
+    # Import Ethereum dashboard
+    copy "dashboards/ethereum.json" to "/var/lib/grafana/dashboards/"
+
+    start service grafana-server
+    ensure port 3000 is open
+
+    run "echo 'Monitoring at http://eth_node:3000'"
+
+
+# ============================================
+# TASK 7: Check Entire Stack Health
+# ============================================
+task "Health Check" on local:
+    # Check Ethereum node
+    run "curl -X POST -H 'Content-Type: application/json' --data '{\"jsonrpc\":\"2.0\",\"method\":\"eth_blockNumber\",\"params\":[],\"id\":1}' http://eth_node:8545"
+
+    # Check IPFS
+    run "curl http://ipfs_node:5001/api/v0/id"
+
+    # Check dApp API
+    check url "http://dapp_backend:3000/health" returns 200
+
+    # Check Grafana
+    check url "http://eth_node:3000/api/health" returns 200
+
+    run "echo '✅ All systems operational!'"
+
+
+# ============================================
+# BONUS: One-Command Full Stack Deployment
+# ============================================
+task "Deploy Everything" on local:
+    # Deploy to all servers in parallel would be:
+    # (In the future with parallel execution support)
+
+    run "echo 'Deploying complete Web3 infrastructure...'"
+    run "si run web3_complete.si --task 'Deploy Ethereum Node' &"
+    run "si run web3_complete.si --task 'Deploy IPFS Storage' &"
+    run "si run web3_complete.si --task 'Deploy dApp Stack' &"
+    run "wait"
+    run "si run web3_complete.si --task 'Deploy Smart Contracts'"
+    run "si run web3_complete.si --task 'Health Check'"
+    run "echo '✅ Complete Web3 stack deployed!'"

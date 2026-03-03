@@ -1,0 +1,114 @@
+# Agentless Network Segmentation Example
+# Shows how SimpleInfra remains agentless while providing powerful segmentation
+
+# Infrastructure definition
+server web1:
+    host "192.168.1.11"
+    user "deploy"
+    key "~/.ssh/id_ed25519"
+
+server web2:
+    host "192.168.1.12"
+    user "deploy"
+    key "~/.ssh/id_ed25519"
+
+server app1:
+    host "192.168.2.11"
+    user "deploy"
+    key "~/.ssh/id_ed25519"
+
+server db1:
+    host "192.168.3.11"
+    user "deploy"
+    key "~/.ssh/id_ed25519"
+
+group web:
+    server web1
+    server web2
+
+group app:
+    server app1
+
+group database:
+    server db1
+
+# Task 1: Discover Network Topology (Agentless)
+task "Map Network" on web1:
+    run "echo 'Discovering network topology...'"
+
+    # Agentless discovery using nmap
+    network:
+        action "discover"
+        subnet "192.168.0.0/16"
+        scan_type "fast"
+
+# Task 2: Segment Web Tier (Agentless)
+task "Isolate Web Tier" on web:
+    # No agent needed - uses SSH to configure firewall
+    network:
+        action "isolate"
+        zone "web-tier"
+        allowed_ips ["0.0.0.0/0"]
+        allowed_ports [80, 443, 22]
+        default_policy "deny"
+
+# Task 3: Segment App Tier (Agentless)
+task "Isolate App Tier" on app:
+    network:
+        action "isolate"
+        zone "app-tier"
+        allowed_ips ["192.168.1.0/24"]
+        allowed_ports [8080, 22]
+        default_policy "deny"
+
+# Task 4: Segment Database Tier (Agentless)
+task "Isolate Database Tier" on database:
+    network:
+        action "isolate"
+        zone "db-tier"
+        allowed_ips ["192.168.2.0/24"]
+        allowed_ports [5432, 22]
+        default_policy "deny"
+
+# Task 5: Micro-segment Between Tiers (Agentless)
+task "Setup Microsegmentation" on app1:
+    # Allow only app -> db communication on specific port
+    network:
+        action "microsegment"
+        from ["192.168.2.11"]
+        to ["192.168.3.11"]
+        ports [5432]
+        protocol "tcp"
+
+# Task 6: Optional Agent Deployment for Continuous Monitoring
+task "Deploy Optional Agents" on web:
+    run "echo 'Deploying monitoring agents (optional)...'"
+
+    # Deploy lightweight agent for real-time monitoring
+    # Agent is deployed via SSH, but runs autonomously
+    agent:
+        action "deploy"
+        zone "web-tier"
+        interval 60
+        mode "daemon"
+        actions ["monitor_connections"]
+
+# Task 7: Verify Segmentation (Agentless)
+task "Verify Segmentation" on web1:
+    run "echo 'Verifying network segmentation...'"
+
+    # Check firewall rules (agentless)
+    run "iptables -L -n -v"
+
+    # Test connectivity
+    run "ping -c 1 192.168.2.11"
+
+    run "echo 'Segmentation verification complete!'"
+
+# Task 8: Remove Agents (Cleanup)
+task "Cleanup Agents" on web:
+    # Remove agents when no longer needed
+    agent:
+        action "remove"
+
+    run "echo 'Agents removed - back to fully agentless!'"

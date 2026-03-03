@@ -1,0 +1,40 @@
+# DMZ Setup Example
+# Shows how to use the specialized DMZ module
+
+server edge:
+    host "192.168.1.1"
+    user "admin"
+    key "~/.ssh/id_ed25519"
+
+server internal:
+    host "192.168.2.1"
+    user "admin"
+    key "~/.ssh/id_ed25519"
+
+# Task 1: Create DMZ with best practices
+task "Create DMZ" on edge:
+    dmz:
+        action "create"
+        zone "dmz"
+        services ["http", "https"]
+        management_ips ["192.168.100.0/24"]
+        logging true
+
+# Task 2: Harden the DMZ
+task "Harden DMZ" on edge:
+    dmz:
+        action "harden"
+
+# Task 3: Verify DMZ configuration
+task "Verify DMZ" on edge:
+    dmz:
+        action "verify"
+
+# Task 4: Optional - Deploy monitoring agent
+task "Monitor DMZ" on edge:
+    agent:
+        action "deploy"
+        zone "dmz"
+        interval "60"
+        mode "daemon"
+        actions ["monitor_connections", "check_firewall"]

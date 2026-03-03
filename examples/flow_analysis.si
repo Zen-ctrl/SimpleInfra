@@ -1,0 +1,80 @@
+# Traffic Flow Analysis Example
+# Real-time monitoring, baseline learning, and anomaly detection
+
+server production:
+    host "192.168.1.100"
+    user "admin"
+    key "~/.ssh/id_ed25519"
+
+server staging:
+    host "192.168.1.101"
+    user "admin"
+    key "~/.ssh/id_ed25519"
+
+# Task 1: Monitor network flows in real-time
+task "Monitor Flows" on production:
+    flowanalysis:
+        action "monitor"
+        duration "60"
+        interval "10"
+
+# Task 2: Create traffic baseline (learn normal patterns)
+task "Create Baseline" on production:
+    flowanalysis:
+        action "baseline"
+        duration "300"
+        name "production-baseline"
+
+# Task 3: Detect anomalies with medium sensitivity
+task "Detect Anomalies Medium" on production:
+    flowanalysis:
+        action "detect_anomalies"
+        baseline "production-baseline"
+        sensitivity "medium"
+
+# Task 4: Detect anomalies with high sensitivity (stricter)
+task "Detect Anomalies High" on production:
+    flowanalysis:
+        action "detect_anomalies"
+        baseline "production-baseline"
+        sensitivity "high"
+
+# Task 5: Visualize flows in ASCII format
+task "Visualize ASCII" on production:
+    flowanalysis:
+        action "visualize"
+        format "ascii"
+
+# Task 6: Visualize flows as Mermaid diagram
+task "Visualize Mermaid" on production:
+    flowanalysis:
+        action "visualize"
+        format "mermaid"
+
+# Task 7: Export flows as JSON for external tools
+task "Export JSON" on production:
+    flowanalysis:
+        action "visualize"
+        format "json"
+
+# Task 8: Identify top talkers (highest traffic sources)
+task "Top Talkers" on production:
+    flowanalysis:
+        action "top_talkers"
+        duration "120"
+        top "20"
+
+# Task 9: Complete flow analysis workflow
+task "Full Analysis" on staging:
+    flowanalysis action="monitor" duration="60" interval="10"
+    flowanalysis action="baseline" duration="300" name="staging-baseline"
+    flowanalysis action="detect_anomalies" baseline="staging-baseline" sensitivity="medium"
+    flowanalysis action="visualize" format="mermaid"
+    flowanalysis action="top_talkers" duration="60" top="10"
+
+# Task 10: Extended monitoring with baseline creation
+task "Extended Monitoring" on production:
+    flowanalysis:
+        action "monitor"
+        duration "120"
+        interval "15"

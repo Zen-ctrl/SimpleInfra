@@ -1,0 +1,262 @@
+// ===========================================================
+// SimpleInfra Grammar  --  Lark LALR(1) with Indenter postlex
+// ===========================================================
+
+start: (_NL | statement)*
+
+// -----------------------------------------------------------
+// Top-level statements
+// -----------------------------------------------------------
+?statement: set_stmt
+          | secret_stmt
+          | server_block
+          | group_block
+          | docker_block
+          | cloud_block
+          | task_block
+          | plan_block
+          | handler_block
+          | import_stmt
+
+// -----------------------------------------------------------
+// Variables
+// -----------------------------------------------------------
+set_stmt: "set" IDENTIFIER value _NL
+
+// -----------------------------------------------------------
+// Secrets
+// -----------------------------------------------------------
+secret_stmt: "secret" IDENTIFIER "from" secret_source _NL
+secret_source: "env" STRING     -> secret_env
+             | "file" STRING    -> secret_file
+
+// -----------------------------------------------------------
+// Values
+// -----------------------------------------------------------
+?value: STRING           -> string_value
+      | NUMBER           -> number_value
+      | BOOLEAN          -> boolean_value
+      | list_value
+      | IDENTIFIER       -> identifier_value
+
+list_value: "[" value ("," value)* "]"
+
+BOOLEAN: "true" | "false"
+
+// -----------------------------------------------------------
+// Server Block
+// -----------------------------------------------------------
+server_block: "server" IDENTIFIER ":" _NL _INDENT server_prop+ _DEDENT
+
+?server_prop: "host" STRING _NL       -> server_host
+            | "user" STRING _NL       -> server_user
+            | "key" STRING _NL        -> server_key
+            | "password" "secret" IDENTIFIER _NL -> server_password
+            | "port" NUMBER _NL       -> server_port
+
+// -----------------------------------------------------------
+// Group Block
+// -----------------------------------------------------------
+group_block: "group" IDENTIFIER ":" _NL _INDENT group_member+ _DEDENT
+
+?group_member: "server" IDENTIFIER _NL   -> group_server
+             | "group" IDENTIFIER _NL    -> group_group
+
+// -----------------------------------------------------------
+// Docker Block
+// -----------------------------------------------------------
+docker_block: "docker" IDENTIFIER ":" _NL _INDENT docker_prop+ _DEDENT
+
+?docker_prop: "name" STRING _NL      -> docker_name
+            | "image" STRING _NL     -> docker_image
+            | "network" STRING _NL   -> docker_network
+
+// -----------------------------------------------------------
+// Cloud Block
+// -----------------------------------------------------------
+cloud_block: "cloud" IDENTIFIER ":" _NL _INDENT cloud_prop+ _DEDENT
+
+?cloud_prop: "provider" IDENTIFIER _NL    -> cloud_provider
+           | "region" STRING _NL           -> cloud_region
+           | "profile" STRING _NL          -> cloud_profile
+           | "credentials" STRING _NL      -> cloud_credentials
+
+// -----------------------------------------------------------
+// Task Block
+// -----------------------------------------------------------
+task_block: "task" STRING "on" target_ref ":" _NL _INDENT task_stmt+ _DEDENT
+
+?target_ref: "local"       -> target_local
+           | IDENTIFIER    -> target_named
+
+// -----------------------------------------------------------
+// Task Actions
+// -----------------------------------------------------------
+?task_stmt: install_stmt _NL
+          | remove_stmt _NL
+          | copy_stmt _NL
+          | upload_stmt _NL
+          | download_stmt _NL
+          | run_stmt _NL
+          | service_stmt _NL
+          | ensure_stmt _NL
+          | check_stmt _NL
+          | wait_stmt _NL
+          | create_user_stmt _NL
+          | delete_user_stmt _NL
+          | create_file_stmt _NL
+          | create_dir_stmt _NL
+          | set_perms_stmt _NL
+          | set_owner_stmt _NL
+          | template_stmt _NL
+          | security_scan_stmt
+          | network_stmt
+          | agent_stmt
+          | policy_stmt
+          | appdep_stmt
+          | flowanalysis_stmt
+          | if_block
+          | unless_block
+          | for_block
+          | notify_stmt _NL
+
+// --- Package ---
+install_stmt: "install" package_list
+remove_stmt: "remove" package_list
+package_list: IDENTIFIER ("," IDENTIFIER)*
+
+// --- File Operations ---
+copy_stmt:     "copy" STRING "to" STRING
+upload_stmt:   "upload" STRING "to" STRING
+download_stmt: "download" STRING "to" STRING
+template_stmt: "template" STRING "to" STRING
+
+// --- Commands ---
+run_stmt: "run" STRING
+
+// --- Services ---
+service_stmt: service_action "service" IDENTIFIER
+?service_action: "start"    -> action_start
+               | "stop"     -> action_stop
+               | "restart"  -> action_restart
+               | "enable"   -> action_enable
+               | "disable"  -> action_disable
+
+// --- Ensure / Check ---
+ensure_stmt: "ensure" ensure_condition
+check_stmt:  "check" check_condition
+
+?ensure_condition: "port" value "is" "open"             -> port_open
+                 | "port" value "is" "closed"            -> port_closed
+                 | "service" IDENTIFIER "is" "running"   -> service_running
+                 | "service" IDENTIFIER "is" "stopped"   -> service_stopped
+                 | "file" STRING "exists"                -> file_exists
+                 | "directory" STRING "exists"            -> dir_exists
+                 | "user" IDENTIFIER "exists"             -> user_exists
+
+?check_condition: "service" IDENTIFIER "is" "running"   -> service_running
+                | "port" value "is" "open"              -> port_open
+                | "url" STRING "returns" NUMBER          -> url_returns
+                | "file" STRING "exists"                 -> file_exists
+                | "file" STRING "contains" STRING        -> file_contains
+                | "disk" STRING "has" "more" "than" SIZE_VALUE "free" -> disk_free
+                | "command" STRING "returns" NUMBER      -> command_returns
+
+// --- Wait ---
+wait_stmt: "wait" "for" wait_target
+?wait_target: "port" value          -> wait_port
+            | "url" STRING          -> wait_url
+            | NUMBER "seconds"      -> wait_seconds
+
+// --- User Management ---
+create_user_stmt: "create" "user" IDENTIFIER
+               | "create" "user" IDENTIFIER "with" "home" STRING -> create_user_home
+delete_user_stmt: "delete" "user" IDENTIFIER
+
+// --- File/Directory Management ---
+create_file_stmt: "create" "file" STRING "with" "content" STRING
+create_dir_stmt:  "create" "directory" STRING
+set_perms_stmt:   "set" "permissions" STRING "on" STRING
+set_owner_stmt:   "set" "owner" IDENTIFIER "on" STRING
+
+// --- Notify (triggers handlers) ---
+notify_stmt: "notify" STRING
+
+// --- Security Scanning ---
+security_scan_stmt: "security" "scan" module_params _NL
+                  | "security" "scan" ":" _NL _INDENT module_param+ _DEDENT
+
+// --- Network Segmentation ---
+network_stmt: "network" module_params _NL
+            | "network" ":" _NL _INDENT module_param+ _DEDENT
+
+// --- Agent Management ---
+agent_stmt: "agent" module_params _NL
+          | "agent" ":" _NL _INDENT module_param+ _DEDENT
+
+// --- Policy Engine ---
+policy_stmt: "policy" module_params _NL
+           | "policy" ":" _NL _INDENT module_param+ _DEDENT
+
+// --- Application Dependency Mapping ---
+appdep_stmt: "appdep" module_params _NL
+           | "appdep" ":" _NL _INDENT module_param+ _DEDENT
+
+// --- Traffic Flow Analysis ---
+flowanalysis_stmt: "flowanalysis" module_params _NL
+                 | "flowanalysis" ":" _NL _INDENT module_param+ _DEDENT
+
+module_params: (IDENTIFIER "=" STRING)+
+module_param: IDENTIFIER value _NL
+
+// -----------------------------------------------------------
+// Control Flow
+// -----------------------------------------------------------
+if_block:     "if" condition ":" _NL _INDENT task_stmt+ _DEDENT
+unless_block: "unless" condition ":" _NL _INDENT task_stmt+ _DEDENT
+
+?condition: IDENTIFIER "is" "not" value       -> cond_is_not
+          | IDENTIFIER "is" value              -> cond_is
+          | IDENTIFIER "contains" value        -> cond_contains
+          | IDENTIFIER ">" value               -> cond_gt
+          | IDENTIFIER "<" value               -> cond_lt
+          | "file" STRING "exists"             -> cond_file_exists
+          | "command" STRING "succeeds"        -> cond_command_succeeds
+
+for_block: "for" IDENTIFIER "in" IDENTIFIER ":" _NL _INDENT task_stmt+ _DEDENT
+
+// -----------------------------------------------------------
+// Handler Block
+// -----------------------------------------------------------
+handler_block: "handler" STRING ":" _NL _INDENT task_stmt+ _DEDENT
+
+// -----------------------------------------------------------
+// Plan Block
+// -----------------------------------------------------------
+plan_block: "plan" STRING ":" _NL _INDENT plan_step+ _DEDENT
+
+?plan_step: "run" "task" STRING _NL                   -> plan_run
+          | "run" "task" STRING "if" condition _NL     -> plan_run_if
+
+// -----------------------------------------------------------
+// Import
+// -----------------------------------------------------------
+import_stmt: "import" STRING _NL
+
+// -----------------------------------------------------------
+// Terminals
+// -----------------------------------------------------------
+IDENTIFIER: /[a-zA-Z_][a-zA-Z0-9_\-]*/
+STRING: /\"[^\"]*\"/
+NUMBER: /[0-9]+/
+SIZE_VALUE: /[0-9]+(GB|MB|KB)/
+COMMENT: /#[^\n]*/
+
+// -----------------------------------------------------------
+// Whitespace & Indentation
+// -----------------------------------------------------------
+%import common.WS_INLINE
+%declare _INDENT _DEDENT
+_NL: (COMMENT? /\r?\n[\t ]*/)+ | COMMENT? /\r?\n[\t ]*/
+%ignore WS_INLINE
+%ignore COMMENT
