@@ -18,17 +18,16 @@ SimpleInfra is a comprehensive Infrastructure as Code (IaC) framework built in P
 ## Installation
 
 ```bash
-# Basic installation
-pip install simpleinfra
+# Install from GitHub
+pip install git+https://github.com/Zen-ctrl/SimpleInfra.git
 
-# With all optional dependencies
-pip install simpleinfra[all]
-
-# Development installation
-git clone <repo>
-cd simpleinfra
+# Or clone and install locally
+git clone https://github.com/Zen-ctrl/SimpleInfra.git
+cd SimpleInfra
 pip install -e .
 ```
+
+**Note:** SimpleInfra is not yet published to PyPI. For now, install directly from GitHub.
 
 ## Quick Start
 
