@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="SimpleInfra - Infrastructure as Code, simplified. Beginner-friendly IaC framework with support for infrastructure, network security, and IoT automation.">
+    <meta name="keywords" content="infrastructure as code, IaC, DevOps, automation, Ansible alternative, Terraform">
+    <title>SimpleInfra - Infrastructure as Code, Simplified</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --secondary: #22d3ee;
+            --dark: #0f172a;
+            --dark-light: #1e293b;
+            --gray: #64748b;
+            --light: #f8fafc;
+            --success: #10b981;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: var(--dark);
+            background: var(--light);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        /* Header */
+        header {
+            background: var(--dark);
+            color: white;
+            padding: 20px 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: var(--secondary);
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 30px;
+            list-style: none;
+        }
+
+        .nav-links a {
+            color: white;
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+
+        .nav-links a:hover {
+            color: var(--secondary);
+        }
+
+        /* Hero Section */
+        .hero {
+            background: linear-gradient(135deg, var(--dark) 0%, var(--dark-light) 100%);
+            color: white;
+            padding: 100px 0;
+            text-align: center;
+        }
+
+        .hero h1 {
+            font-size: 56px;
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, var(--secondary) 0%, var(--primary) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero p {
+            font-size: 24px;
+            color: var(--gray);
+            margin-bottom: 40px;
+        }
+
+        .cta-buttons {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 15px 40px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s;
+            display: inline-block;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(99, 102, 241, 0.3);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: white;
+            border: 2px solid var(--secondary);
+        }
+
+        .btn-secondary:hover {
+            background: var(--secondary);
+            color: var(--dark);
+        }
+
+        /* Features Section */
+        .features {
+            padding: 80px 0;
+            background: white;
+        }
+
+        .section-title {
+            text-align: center;
+            font-size: 42px;
+            margin-bottom: 60px;
+            color: var(--dark);
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 40px;
+        }
+
+        .feature-card {
+            padding: 30px;
+            background: var(--light);
+            border-radius: 12px;
+            transition: all 0.3s;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        .feature-icon {
+            font-size: 48px;
+            margin-bottom: 20px;
+        }
+
+        .feature-card h3 {
+            font-size: 24px;
+            margin-bottom: 15px;
+            color: var(--dark);
+        }
+
+        .feature-card p {
+            color: var(--gray);
+            line-height: 1.8;
+        }
+
+        /* Code Example Section */
+        .code-example {
+            padding: 80px 0;
+            background: var(--dark);
+            color: white;
+        }
+
+        .code-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            margin-top: 40px;
+        }
+
+        .code-block {
+            background: var(--dark-light);
+            border-radius: 12px;
+            padding: 30px;
+            overflow-x: auto;
+        }
+
+        .code-block h3 {
+            color: var(--secondary);
+            margin-bottom: 20px;
+            font-size: 20px;
+        }
+
+        pre {
+            margin: 0;
+            overflow-x: auto;
+        }
+
+        code {
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        /* Comparison Section */
+        .comparison {
+            padding: 80px 0;
+            background: white;
+        }
+
+        .comparison-table {
+            max-width: 900px;
+            margin: 40px auto;
+            background: var(--light);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .comparison-table table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .comparison-table th {
+            background: var(--dark);
+            color: white;
+            padding: 20px;
+            text-align: left;
+        }
+
+        .comparison-table td {
+            padding: 20px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .comparison-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .check {
+            color: var(--success);
+            font-weight: bold;
+        }
+
+        /* Stats Section */
+        .stats {
+            padding: 80px 0;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            text-align: center;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 40px;
+            margin-top: 40px;
+        }
+
+        .stat-item h3 {
+            font-size: 48px;
+            margin-bottom: 10px;
+            color: var(--secondary);
+        }
+
+        .stat-item p {
+            font-size: 18px;
+            color: rgba(255,255,255,0.9);
+        }
+
+        /* CTA Section */
+        .cta-section {
+            padding: 80px 0;
+            background: var(--dark);
+            color: white;
+            text-align: center;
+        }
+
+        .cta-section h2 {
+            font-size: 42px;
+            margin-bottom: 20px;
+        }
+
+        .cta-section p {
+            font-size: 20px;
+            color: var(--gray);
+            margin-bottom: 40px;
+        }
+
+        /* Footer */
+        footer {
+            background: var(--dark-light);
+            color: var(--gray);
+            padding: 40px 0;
+            text-align: center;
+        }
+
+        footer a {
+            color: var(--secondary);
+            text-decoration: none;
+        }
+
+        footer a:hover {
+            text-decoration: underline;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 36px;
+            }
+
+            .hero p {
+                font-size: 18px;
+            }
+
+            .code-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .nav-links {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <nav class="container">
+            <div class="logo">SimpleInfra</div>
+            <ul class="nav-links">
+                <li><a href="#features">Features</a></li>
+                <li><a href="#examples">Examples</a></li>
+                <li><a href="#comparison">Comparison</a></li>
+                <li><a href="https://github.com/Zen-ctrl/SimpleInfra">GitHub</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <section class="hero">
+        <div class="container">
+            <h1>Infrastructure as Code, Simplified</h1>
+            <p>The beginner-friendly IaC framework with English-like syntax</p>
+            <div class="cta-buttons">
+                <a href="https://github.com/Zen-ctrl/SimpleInfra" class="btn btn-primary">Get Started</a>
+                <a href="https://github.com/Zen-ctrl/SimpleInfra#examples" class="btn btn-secondary">View Examples</a>
+            </div>
+        </div>
+    </section>
+
+    <section id="features" class="features">
+        <div class="container">
+            <h2 class="section-title">Why SimpleInfra?</h2>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">⚡</div>
+                    <h3>Simple Syntax</h3>
+                    <p>Reads like English, not YAML. Get started in minutes, not hours.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🚀</div>
+                    <h3>Blazing Fast</h3>
+                    <p>Async execution for parallel operations across multiple servers.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🎯</div>
+                    <h3>Multi-Domain</h3>
+                    <p>Infrastructure, network security, and IoT automation in one tool.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🔧</div>
+                    <h3>18+ Modules</h3>
+                    <p>Pre-built modules for servers, databases, containers, networking, and IoT.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🌐</div>
+                    <h3>Cross-Platform</h3>
+                    <p>Works on Windows, Linux, and macOS. Local or remote execution.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🔒</div>
+                    <h3>Agentless</h3>
+                    <p>No daemons or agents needed. Pure SSH automation.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="examples" class="code-example">
+        <div class="container">
+            <h2 class="section-title">See It In Action</h2>
+            <div class="code-grid">
+                <div class="code-block">
+                    <h3>Hello World</h3>
+                    <pre><code>task "Hello World" on local:
+    run "echo Hello from SimpleInfra!"
+    run "echo Current directory:"
+    run "cd"</code></pre>
+                </div>
+                <div class="code-block">
+                    <h3>Web Server Setup</h3>
+                    <pre><code>task "Setup Web Server" on web:
+    install nginx
+    install python3
+
+    start service nginx
+    ensure port 80 is open
+
+    run "echo Server ready!"</code></pre>
+                </div>
+                <div class="code-block">
+                    <h3>With Variables</h3>
+                    <pre><code>set app_name "myapp"
+set version "1.0.0"
+
+task "Deploy" on servers:
+    run "echo Deploying {app_name} v{version}"
+    create directory "/opt/{app_name}"</code></pre>
+                </div>
+                <div class="code-block">
+                    <h3>IoT Automation</h3>
+                    <pre><code>task "Setup IoT Gateway" on pi:
+    raspberrypi:
+        action "setup_iot_gateway"
+        install_mqtt "true"
+        install_nodered "true"</code></pre>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="comparison" class="comparison">
+        <div class="container">
+            <h2 class="section-title">SimpleInfra vs Ansible</h2>
+            <div class="comparison-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Feature</th>
+                            <th>SimpleInfra</th>
+                            <th>Ansible</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Learning Curve</td>
+                            <td class="check">Minutes</td>
+                            <td>Hours to Days</td>
+                        </tr>
+                        <tr>
+                            <td>Syntax</td>
+                            <td class="check">English-like DSL</td>
+                            <td>YAML (verbose)</td>
+                        </tr>
+                        <tr>
+                            <td>Execution Speed</td>
+                            <td class="check">Async (Fast)</td>
+                            <td>Sync (Slower)</td>
+                        </tr>
+                        <tr>
+                            <td>IoT Support</td>
+                            <td class="check">Built-in (Raspberry Pi, Arduino)</td>
+                            <td>Limited</td>
+                        </tr>
+                        <tr>
+                            <td>Network Security</td>
+                            <td class="check">8 modules (Illumio-style)</td>
+                            <td>Basic</td>
+                        </tr>
+                        <tr>
+                            <td>Windows Compatible</td>
+                            <td class="check">Full support</td>
+                            <td>WSL required</td>
+                        </tr>
+                        <tr>
+                            <td>File Size</td>
+                            <td class="check">Small</td>
+                            <td>Large (lots of boilerplate)</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <section class="stats">
+        <div class="container">
+            <h2 class="section-title">By The Numbers</h2>
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <h3>18+</h3>
+                    <p>Built-in Modules</p>
+                </div>
+                <div class="stat-item">
+                    <h3>25K+</h3>
+                    <p>Lines of Code</p>
+                </div>
+                <div class="stat-item">
+                    <h3>3</h3>
+                    <p>Domains (Infra/Network/IoT)</p>
+                </div>
+                <div class="stat-item">
+                    <h3>17+</h3>
+                    <p>Working Examples</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="cta-section">
+        <div class="container">
+            <h2>Ready to Simplify Your Infrastructure?</h2>
+            <p>Get started in minutes with SimpleInfra</p>
+            <div class="cta-buttons">
+                <a href="https://github.com/Zen-ctrl/SimpleInfra" class="btn btn-primary">View on GitHub</a>
+                <a href="https://github.com/Zen-ctrl/SimpleInfra#installation" class="btn btn-secondary">Installation Guide</a>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2026 SimpleInfra. Open source under MIT License.</p>
+            <p>
+                <a href="https://github.com/Zen-ctrl/SimpleInfra">GitHub</a> |
+                <a href="https://github.com/Zen-ctrl/SimpleInfra/issues">Issues</a> |
+                <a href="https://github.com/Zen-ctrl/SimpleInfra#contributing">Contributing</a>
+            </p>
+        </div>
+    </footer>
+</body>
+</html>
